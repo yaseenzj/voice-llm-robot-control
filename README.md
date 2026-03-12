@@ -1,4 +1,39 @@
-# voice-llm-robot-control
-A voice-controlled robotic system powered by Large Language Models and ROS, allowing users to command robots using natural language.
+# Voice LLM Robot - Week 1 Documentation 
+Arduino Test
 
-In Process
+Temporary Arduino implementation
+Primary target: Raspberry Pi (week 2-3).
+
+## Features
+- [List 2-3 key functions, e.g., "Reads temperature sensor", "Serial output", "LED indicator"]
+- Tested on Arduino Mega 2560
+
+## Hardware Requirements
+- Arduino Mega 2560
+- Jumper wires, DC Motor, Switch, Wheels
+- Power: 11.1V battery
+
+## Wiring Diagram
+
+
+
+## Installation
+1. Install Arduino IDE from arduino.cc
+2. Connect Arduino via USB
+3. Open `src/main.ino` in IDE
+4. Select board: [Arduino MEGA 2560] under Tools > Board
+5. Select port: Tools > Port
+6. Upload sketch
+
+## Usage
+1. Upload code
+2. Open Serial Monitor (Tools > Serial Monitor)
+3. [Speak.. Forward,Backward,Left,Right,Stop,Pause)
+
+Example serial output:
+👂 Speak...
+"forward"
+FORWARD ✓
+👂 Speak...
+"stop"
+STOP ✓
