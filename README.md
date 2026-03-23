@@ -1,22 +1,26 @@
 # Voice LLM Robot - Week 4 Documentation
 
 **Arduino Voice-Controlled Chassis**  
-*Temporary implementation for Week 1 testing. Primary target: Raspberry Pi LLM integration (Week 2-3).*
+Temporary implementation for Week 1 testing.  
+Primary target: Raspberry Pi LLM integration (Week 2–3).
 
 ## Features
-- [x] Real-time voice command recognition (forward/back/left/right/stop)
-- [x] L298N motor driver PWM control (slow speed: 80/255)
-- [x] Clean serial communication (/dev/ttyACM0, 9600 baud)
-- [x] Tested on Ubuntu 22.04 + Arduino Mega 2560
+
+- Real‑time voice command recognition: `forward` / `back` / `left` / `right` / `stop`
+- L298N motor driver PWM control (slow speed: 80/255)
+- Clean serial communication (`/dev/ttyACM0`, 9600 baud)
+- Tested on Ubuntu 22.04 + Arduino Mega 2560
 
 ## Hardware Requirements
+
 - Arduino Mega 2560
 - L298N dual motor driver
-- 2x DC motors (6-12V, 100RPM)
-- 4-wheel robot chassis
+- 2× DC motors (6–12 V, 100 RPM)
+- 4‑wheel robot chassis
 - Jumper wires
-- USB cable (Arduino to laptop)
-- Power: 12V LiPo battery
+- USB cable (Arduino → laptop)
+- Power: 12 V LiPo battery
+
 
 ## Wiring Diagram
 
