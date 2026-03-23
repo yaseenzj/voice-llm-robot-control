@@ -35,6 +35,12 @@ Primary target: Raspberry Pi LLM integration (Week 4-5).
 | VCC       | Arduino 5V          | Logic power |
 | GND       | Arduino GND         | Common ground |
 
+## Motor Diagram
+
+| Motor | L298N Outputs |
+|-------|---------------|
+| Left  | OUT1, OUT2    |
+| Right | OUT3, OUT4    |
 
 
 ## Installation
