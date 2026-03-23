@@ -44,7 +44,6 @@ Motors:
 
 └── Right → L298N OUT3/OUT4
 
-text
 
 ## Installation
 
