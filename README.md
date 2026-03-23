@@ -24,29 +24,17 @@ Primary target: Raspberry Pi LLM integration (Week 4-5).
 
 ## Wiring Diagram
 
-L298N Motor Driver → Arduino Mega
+| L298N Pin | Connected to        | Purpose |
+|-----------|---------------------|---------|
+| IN1       | Arduino pin 8       | Left motor forward |
+| IN2       | Arduino pin 9       | Left motor reverse |
+| IN3       | Arduino pin 10      | Right motor forward |
+| IN4       | Arduino pin 11      | Right motor reverse |
+| ENA       | Arduino pin 7       | Left motor PWM |
+| ENB       | Arduino pin 6       | Right motor PWM |
+| VCC       | Arduino 5V          | Logic power |
+| GND       | Arduino GND         | Common ground |
 
-├── IN1 → Pin 8 (Left motor forward)
-
-├── IN2 → Pin 9 (Left motor reverse)
-
-├── IN3 → Pin 10 (Right motor forward)
-
-├── IN4 → Pin 11 (Right motor reverse)
-
-├── ENA → Pin 7 (Left PWM)
-
-├── ENB → Pin 6 (Right PWM)
-
-├── VCC → 5V
-
-└── GND → GND
-
-Motors:
-
-├── Left → L298N OUT1/OUT2
-
-└── Right → L298N OUT3/OUT4
 
 
 ## Installation
