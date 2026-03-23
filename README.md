@@ -16,7 +16,7 @@
 - 4-wheel robot chassis
 - Jumper wires
 - USB cable (Arduino to laptop)
-- Power: 7.4V-11.1V LiPo battery
+- Power: 12V LiPo battery
 
 ## Wiring Diagram
 
