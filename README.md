@@ -22,12 +22,19 @@
 
 L298N Motor Driver → Arduino Mega
 ├── IN1 → Pin 8 (Left motor forward)
+
 ├── IN2 → Pin 9 (Left motor reverse)
+
 ├── IN3 → Pin 10 (Right motor forward)
+
 ├── IN4 → Pin 11 (Right motor reverse)
+
 ├── ENA → Pin 7 (Left PWM)
+
 ├── ENB → Pin 6 (Right PWM)
+
 ├── VCC → 5V
+
 └── GND → GND
 
 Motors:
