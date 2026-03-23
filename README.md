@@ -7,7 +7,7 @@
 - [x] Real-time voice command recognition (forward/back/left/right/stop)
 - [x] L298N motor driver PWM control (slow speed: 80/255)
 - [x] Clean serial communication (/dev/ttyACM0, 9600 baud)
-- [x] Tested on Ubuntu 24.04 + Arduino Mega 2560
+- [x] Tested on Ubuntu 22.04 + Arduino Mega 2560
 
 ## Hardware Requirements
 - Arduino Mega 2560
