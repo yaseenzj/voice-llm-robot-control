@@ -1,4 +1,4 @@
-# Voice LLM Robot - Week 1 Documentation
+# Voice LLM Robot - Week 4 Documentation
 
 **Arduino Voice-Controlled Chassis**  
 *Temporary implementation for Week 1 testing. Primary target: Raspberry Pi LLM integration (Week 2-3).*
