@@ -49,7 +49,7 @@ Motors:
 
 ### 1. Arduino Setup
 
-    Install Arduino IDE 2.x from arduino.cc
+    Install Arduino IDE 2 from arduino.cc
 
     Connect Arduino Mega via USB
 
@@ -61,26 +61,19 @@ Motors:
 
     Upload sketch (Ctrl+U)
 
-text
 
 ### 2. Python Voice Setup
 ```bash
 pip3 install SpeechRecognition pyserial
-python3 src/voice_controller.py
+python3 src/mic_voice_chassis.py
 
 Usage
-Arduino Test
-
-text
 1. Upload `chassis_controller.ino`
 2. Open Serial Monitor (9600 baud)
-3. Type: F/B/L/R/S + Enter
+3. Speak: Forward /Backward /Left / Right / Stop 
 4. Verify: Motors move slow (PWM 80)
 5. **CLOSE Serial Monitor** (blocks Python)
 
-Voice Control Demo
-
-text
 Terminal shows:
 👂 Speak...
 "forward" → FORWARD ✓
@@ -92,7 +85,6 @@ Terminal shows:
 Voice Commands: forward/back/left/right/stop/f/b/l/r/s
 Example Serial Output
 
-text
 ✅ SLOW Chassis Ready
 Cmd: F → Moving
 Cmd: L → Moving  
@@ -100,7 +92,6 @@ Cmd: S → STOPPED
 
 Python Terminal Output
 
-text
 🎤 VOICE READY
 👂 Speak... "forward"
 FORWARD ✓
@@ -117,19 +108,20 @@ ALSA warnings	Normal - add os.environ['AUDIODEV'] = 'null'
 Voice not detected	Run find_mic.py, update device_index=12
 File Structure
 
-text
 voice-llm-robot/
+
 ├── src/
+
 │   ├── chassis_controller.ino     # Arduino firmware
 │   ├── voice_controller.py        # Python voice system
 │   └── find_mic.py               # Microphone detection
+
 ├── docs/
 │   └── wiring_diagram.jpg        # Visual connections
 └── README.md
 
 Performance Metrics
 
-text
 Voice latency: ~0.5s end-to-end
 Motor response: <50ms
 Command accuracy: 95%
