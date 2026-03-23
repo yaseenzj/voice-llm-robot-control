@@ -39,7 +39,9 @@ L298N Motor Driver → Arduino Mega
 └── GND → GND
 
 Motors:
+
 ├── Left → L298N OUT1/OUT2
+
 └── Right → L298N OUT3/OUT4
 
 text
