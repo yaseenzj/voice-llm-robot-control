@@ -21,6 +21,7 @@
 ## Wiring Diagram
 
 L298N Motor Driver → Arduino Mega
+
 ├── IN1 → Pin 8 (Left motor forward)
 
 ├── IN2 → Pin 9 (Left motor reverse)
