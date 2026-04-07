@@ -2,77 +2,85 @@
 import speech_recognition as sr
 import serial
 import time
-import glob
 import os
+import sys
 import warnings
-import pyaudio
 
+# --- 1. SILENCE SYSTEM ERRORS ---
+# This stops the "ALSA/JACK" wall of text from appearing
+sys.stderr = open(os.devnull, 'w')
 warnings.filterwarnings("ignore")
-os.environ['PYALSA_NO_LIBASOUND'] = '1'
 
-# Arduino
-ports = glob.glob('/dev/ttyUSB*') + glob.glob('/dev/ttyACM*')
-if not ports: print("❌ Arduino?"); exit()
-PORT = ports[0]; print(f"✅ {PORT}")
-ser = serial.Serial(PORT, 9600, timeout=0.5)
-time.sleep(2); ser.flushInput(); ser.flushOutput()
+# --- 2. SERIAL SETUP ---
+# Update '/dev/ttyACM0' if your Arduino shows up on a different port
+try:
+    ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+    print("? Connected to Arduino Mega on /dev/ttyACM0")
+    print("? Waiting 3s for Arduino to initialize...")
+    time.sleep(3) 
+except Exception as e:
+    print(f"? SERIAL ERROR: {e}")
+    print("Check if Arduino is plugged in and you have permissions (sudo chmod 666 /dev/ttyACM0)")
+    sys.exit()
 
-# Your mic #10
-mic_index = 10
-print("🎤 Mic #10 (wireless)")
-
+# --- 3. VOICE ENGINE SETUP ---
 r = sr.Recognizer()
-r.energy_threshold = 2500
+mic_index = 1  # Your Wireless Mic Index from list_mics.py
+r.energy_threshold = 500  # Sensitivity: Lower = More sensitive
 r.dynamic_energy_threshold = True
-m = sr.Microphone(device_index=mic_index)
 
-print("🎤 Calibrate (silent 3s)...")
-with m as source:
-    r.adjust_for_ambient_noise(source, duration=3)
-print(f"✅ Threshold: {r.energy_threshold}")
-
-print("🚗 Say SLOW/LOUD: 'forward', 'back', 'left', 'right', 'stop' (or f/b/l/r/s)")
-
+# Mapping voice keywords to Arduino character commands
 COMMANDS = {
-    'forward': 'F', 'forwards': 'F', 'go forward': 'F', 'f': 'F', 'fore': 'F',
-    'back': 'B', 'backward': 'B', 'backwards': 'B', 'reverse': 'B', 'b': 'B',
-    'left': 'L', 'turn left': 'L', 'go left': 'L', 'l': 'L',
-    'right': 'R', 'turn right': 'R', 'go right': 'R', 'r': 'R',
-    'stop': 'S', 'stops': 'S', 'halt': 'S', 's': 'S'
+    'forward': 'F', 'go forward': 'F',
+    'back': 'B', 'backward': 'B', 'reverse': 'B',
+    'left': 'L', 'turn left': 'L',
+    'right': 'R', 'turn right': 'R',
+    'stop': 'S', 'halt': 'S'
 }
 
-while True:
-    try:
-        print("👂 Speak...")
-        with m as source:
-            audio = r.listen(source, timeout=4, phrase_time_limit=4)
-        
-        text = r.recognize_google(audio, language='en-IN').lower()  # Indian English
-        print(f'🎤 "{text}"')
-        
-        # Match any word in text
-        cmd = None
-        text_words = text.split()
-        for word in text_words:
-            if word in COMMANDS:
-                cmd = COMMANDS[word]
-                break
-        
-        if cmd:
-            ser.write(f"{cmd}\n".encode())  # FIXED: Proper newline
-            ser.flush()
-            print(f"✅ {cmd} → Arduino!")
-        else:
-            print("❓ No match—try clearer")
-            
-    except sr.WaitTimeoutError:
-        print("⏰ No sound...")
-    except sr.UnknownValueError:
-        print("🤐 Couldn't understand")
-    except sr.RequestError as e:
-        print(f"🌐 Google API: {e}")
-    except KeyboardInterrupt:
-        ser.close(); print("👋"); break
-    except Exception as e:
-        print(f"💥 {e}")
+print("\n?? ROBOT VOICE CONTROL ACTIVE")
+print("Commands: 'Forward', 'Back', 'Left', 'Right', 'Stop'")
 
+try:
+    with sr.Microphone(device_index=mic_index) as source:
+        print("?? Calibrating mic for background noise...")
+        r.adjust_for_ambient_noise(source, duration=1)
+        
+        while True:
+            print("\n?? Listening for your command...")
+            try:
+                # Listen for 5 seconds max, limit phrase to 3 seconds
+                audio = r.listen(source, timeout=5, phrase_time_limit=3)
+                
+                # Recognize using Indian English (en-IN)
+                text = r.recognize_google(audio, language='en-IN').lower()
+                print(f'?? Recognized: "{text}"')
+
+                # Check if any keyword is in the recognized text
+                cmd_found = False
+                for word in text.split():
+                    if word in COMMANDS:
+                        target_cmd = COMMANDS[word]
+                        ser.write(target_cmd.encode())
+                        print(f"?? ACTION: {word.upper()} (Sent '{target_cmd}')")
+                        cmd_found = True
+                        break
+                
+                if not cmd_found:
+                    print("? Command not found in dictionary.")
+
+            except sr.WaitTimeoutError:
+                # No sound detected, just loop back
+                continue
+            except sr.UnknownValueError:
+                print("?? Audio not clear enough.")
+            except sr.RequestError:
+                print("?? Internet Error: Google API unreachable.")
+            except Exception as e:
+                print(f"?? Error: {e}")
+
+except KeyboardInterrupt:
+    print("\n?? Shutting down... Sending STOP command.")
+    ser.write(b'S')
+    ser.close()
+    sys.exit()
