@@ -21,5 +21,5 @@ else
 fi
 
 echo "🚀 Setup complete! Booting up Robot Brain..."
-cd src
+cd python
 python3 robot_brain.py

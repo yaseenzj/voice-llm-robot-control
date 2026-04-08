@@ -87,7 +87,7 @@ We provide automated scripts to instantly download the correct dependencies, fet
    ```
 5. **Run**:
    ```bash
-   python src/robot_brain.py
+   python python/robot_brain.py
    ```
 
 ### 3. Usage & Execution
@@ -122,11 +122,13 @@ voice-llm-robot-control/
 ├── run.bat                   # 1-Click Windows Setup
 ├── run.sh                    # 1-Click Linux/macOS Setup
 ├── requirements.txt          # Minimal Python dependencies
-└── src/
+├── docs/                     # Schematics and Diagrams
+├── arduino/
+│   └── motor_control/
+│       └── motor_control.ino # Arduino Motor Firmware
+└── python/
     ├── robot_brain.py        # Python Voice + LLM AI Engine
-    ├── list_mics.py          # Helper for checking audio devices
-    └── motor_control/
-        └── motor_control.ino # Arduino Motor Command Firmware
+    └── list_mics.py          # Helper for checking audio devices
 ```
 
 ## Performance Specs

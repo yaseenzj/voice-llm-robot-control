@@ -30,6 +30,6 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo 🚀 Setup complete! Booting up Robot Brain...
 echo.
-cd src
+cd python
 python robot_brain.py
 pause
