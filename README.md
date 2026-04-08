@@ -106,46 +106,30 @@ Terminal shows:
 "stop" → STOP ✓
 
 Voice Commands: forward/back/left/right/stop/f/b/l/r/s
-Example Serial Output
+### Troubleshooting
+| Issue | Solution |
+|--------|----------|
+| `/dev/ttyACM0` (or `COM3`) busy | Close any open Arduino Serial Monitors or any other Python instances |
+| No motor movement | Ensure the 12V LiPo battery is charged and L298N receives power |
+| Voice not detected | Make sure your microphone is selected properly |
+| LLaMA API Errors | Ensure `ollama run llama3.2:1b` works locally without issues |
 
-✅ SLOW Chassis Ready
-Cmd: F → Moving
-Cmd: L → Moving  
-Cmd: S → STOPPED
+### Repository Structure
 
-Python Terminal Output
+```
+voice-llm-robot-control/
+├── README.md                 # Project Documentation
+├── run.bat                   # 1-Click Windows Setup
+├── run.sh                    # 1-Click Linux/macOS Setup
+├── requirements.txt          # Minimal Python dependencies
+└── src/
+    ├── robot_brain.py        # Python Voice + LLM AI Engine
+    ├── list_mics.py          # Helper for checking audio devices
+    └── motor_control/
+        └── motor_control.ino # Arduino Motor Command Firmware
+```
 
-🎤 VOICE READY
-👂 Speak... "forward"
-FORWARD ✓
-👂 Speak... "back" 
-BACK ✓
-👂 Speak... "stop"
-STOP ✓
-
-Troubleshooting
-Issue	Solution
-/dev/ttyACM0 busy	sudo killall arduino + unplug/replug
-No motor movement	Check L298N wiring (pins 6-11), test with 9V battery
-ALSA warnings	Normal - add os.environ['AUDIODEV'] = 'null'
-Voice not detected	Run find_mic.py, update device_index=12
-File Structure
-
-voice-llm-robot/
-
-├── src/
-
-│   ├── chassis_controller.ino     # Arduino firmware
-│   ├── voice_controller.py        # Python voice system
-│   └── find_mic.py               # Microphone detection
-
-├── docs/
-│   └── wiring_diagram.jpg        # Visual connections
-└── README.md
-
-Performance Metrics
-
-Voice latency: ~0.5s end-to-end
-Motor response: <50ms
-Command accuracy: 95%
-Tested: Ubuntu 24.04 + Arduino Mega 2560
+## Performance Specs
+- **Heuristic Parse Latency:** ~0ms
+- **LLaMA API Turnaround:** <2s per complex step
+- **Motor Response:** hardware limited (near instant)
