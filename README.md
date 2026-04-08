@@ -1,137 +1,51 @@
-# Voice LLM Robot - Week 4 Documentation
+# Voice-LLM Robot
 
-**Arduino Voice-Controlled Chassis**  
-Temporary implementation on Arduino Mega for testing.  
-Primary target: Raspberry Pi LLM integration (Week 4-5).
+### **Stop talking to walls. Talk to your hardware.**
+Most "voice-controlled" robots are just glorified remote controls with a limited vocabulary. This one has a local LLaMA 3.2 brain running on a Raspberry Pi 4, meaning it actually understands what you want, even if you don't say it perfectly. It's the difference between a scripted NPC and a physical agent that thinks.
 
-## Features
+---
 
-- Real‑time voice command recognition: `forward` / `back` / `left` / `right` / `stop`
-- L298N motor driver PWM control (slow speed: 80/255)
-- Clean serial communication (`/dev/ttyACM0`, 9600 baud)
-- Tested on Ubuntu 22.04 + Arduino Mega 2560
-
-## Hardware Requirements
-
-- Arduino Mega 2560
-- L298N dual motor driver
-- 2× DC motors (6–12 V, 100 RPM)
-- 4‑wheel robot chassis
-- Jumper wires
-- USB cable (Arduino → laptop)
-- Power: 12 V LiPo battery
+## The Actual Experience
+Forget memorizing "Move Forward 5 Seconds." Just tell it what to do like a normal person.
+> *"Yo, cruise forward for a bit, then pull a sharp left and wait there."*
 
 
-## Wiring Diagram
 
-| L298N Pin | Connected to        | Purpose |
-|-----------|---------------------|---------|
-| IN1       | Arduino pin 8       | Left motor forward |
-| IN2       | Arduino pin 9       | Left motor reverse |
-| IN3       | Arduino pin 10      | Right motor forward |
-| IN4       | Arduino pin 11      | Right motor reverse |
-| ENA       | Arduino pin 7       | Left motor PWM |
-| ENB       | Arduino pin 6       | Right motor PWM |
-| VCC       | Arduino 5V          | Logic power |
-| GND       | Arduino GND         | Common ground |
+### **Why this isn't just another tutorial project:**
+* **Privacy by Default:** Everything runs on-device via Ollama on your Pi 4. No data is leaving your room, and no big-tech company is listening to your conversations.
+* **Conversational Logic:** It handles intent. If you're vague, the LLM fills the gaps. If you're specific, it executes perfectly.
+* **Hybrid Engine:** We use heuristics for the simple stuff (instant response) and the LLM for the complex maneuvers.
+* **Hardware Combo:** Uses the Raspberry Pi 4 for high-level reasoning and the Arduino Uno for rock-solid motor execution.
 
-## Motor Diagram
+---
 
-| Motor | L298N Outputs |
-|-------|---------------|
-| Left  | OUT1, OUT2    |
-| Right | OUT3, OUT4    |
+## The Hardware Stack
 
 
-## Installation
+| Component | The Job |
+| :--- | :--- |
+| **Raspberry Pi 4B** | The Pre-frontal Cortex. Handles the mic input and the LLaMA 3.2 brain. |
+| **Arduino Uno** | The muscles. Handles the real-time PWM and motor pulses via Serial. |
+| **L298N Driver** | The nervous system. Keeps the motors from frying your boards. |
+| **12V LiPo** | The heart. Providing the juice to actually move. |
 
-### 1. Arduino Setup
+---
 
-    Install Arduino IDE 2 from arduino.cc
+## Getting Started (The 1-Click Version)
+I hate manual setup as much as you do. Use the scripts.
 
-    Connect Arduino Mega via USB
+1. **Windows:** Double-click `run.bat`
+2. **Linux/macOS:** `bash run.sh`
 
-    Open src/chassis_controller.ino
+### **The "I want to do it myself" Way**
+```bash
+# Set up the environment on your Pi
+python -m venv .venv
+source .venv/bin/activate 
 
-    Tools → Board → "Arduino Mega or Mega 2560"
+# Get the dependencies and the brain
+pip install -r requirements.txt
+ollama pull llama3.2:1b
 
-    Tools → Port → "/dev/ttyACM0" (Linux)
-
-    Upload sketch (Ctrl+U)
-
-
-### 2. Python Environment Setup
-
-It is highly recommended to isolate dependencies using a Python virtual environment.
-
-**Option A: Automated Setup (Recommended)**
-We provide automated scripts to instantly download the correct dependencies, fetch the local LLaMA model, and boot the robot:
-- **Windows:** Run `run.bat`
-- **Linux/macOS:** Run `bash run.sh`
-
-**Option B: Manual Virtual Environment Setup**
-1. **Create** the virtual environment in the project root:
-   ```bash
-   python -m venv .venv
-   ```
-2. **Activate** the virtual environment:
-   - Windows: `.venv\Scripts\activate`
-   - Linux/macOS: `source .venv/bin/activate`
-3. **Install Dependencies** exactly matching the project standards:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. **Pull Local Brain Model** (Ensure Ollama is installed):
-   ```bash
-   ollama pull llama3.2:1b
-   ```
-5. **Run**:
-   ```bash
-   python python/robot_brain.py
-   ```
-
-### 3. Usage & Execution
-1. Upload `motor_control.ino` to the Arduino Mega.
-2. Note: If you test via Serial Monitor first, **CLOSE IT** before running Python, as it hogs the COM port!
-3. Execute the Python script (or use the `run` scripts).
-4. **Speak completely naturally**: *"Go fast forward for two seconds, then go left for one second."*
-5. The Robot Brain will instantly parse the sequence using heuristics, invoke LLaMA for complex logic, confirm its plan out loud using TTS, and seamlessly move the chassis!
-
-Terminal shows:
-👂 Speak...
-"forward" → FORWARD ✓
-👂 Speak...
-"left" → LEFT ✓  
-👂 Speak...
-"stop" → STOP ✓
-
-Voice Commands: forward/back/left/right/stop/f/b/l/r/s
-### Troubleshooting
-| Issue | Solution |
-|--------|----------|
-| `/dev/ttyACM0` (or `COM3`) busy | Close any open Arduino Serial Monitors or any other Python instances |
-| No motor movement | Ensure the 12V LiPo battery is charged and L298N receives power |
-| Voice not detected | Make sure your microphone is selected properly |
-| LLaMA API Errors | Ensure `ollama run llama3.2:1b` works locally without issues |
-
-### Repository Structure
-
-```
-voice-llm-robot-control/
-├── README.md                 # Project Documentation
-├── run.bat                   # 1-Click Windows Setup
-├── run.sh                    # 1-Click Linux/macOS Setup
-├── requirements.txt          # Minimal Python dependencies
-├── docs/                     # Schematics and Diagrams
-├── arduino/
-│   └── motor_control/
-│       └── motor_control.ino # Arduino Motor Firmware
-└── python/
-    ├── robot_brain.py        # Python Voice + LLM AI Engine
-    └── list_mics.py          # Helper for checking audio devices
-```
-
-## Performance Specs
-- **Heuristic Parse Latency:** ~0ms
-- **LLaMA API Turnaround:** <2s per complex step
-- **Motor Response:** hardware limited (near instant)
+# Wake it up
+python python/robot_brain.py
