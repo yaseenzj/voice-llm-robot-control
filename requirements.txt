@@ -1,0 +1,5 @@
+pyserial
+requests
+SpeechRecognition
+PyAudio
+pyttsx3

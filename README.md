@@ -60,17 +60,42 @@ Primary target: Raspberry Pi LLM integration (Week 4-5).
     Upload sketch (Ctrl+U)
 
 
-### 2. Python Voice Setup
-```bash
-pip3 install SpeechRecognition pyserial
-python3 src/mic_voice_chassis.py
+### 2. Python Environment Setup
 
-Usage
-1. Upload `chassis_controller.ino`
-2. Open Serial Monitor (9600 baud)
-3. Speak: Forward /Backward /Left / Right / Stop 
-4. Verify: Motors move slow (PWM 80)
-5. **CLOSE Serial Monitor** (blocks Python)
+It is highly recommended to isolate dependencies using a Python virtual environment.
+
+**Option A: Automated Setup (Recommended)**
+We provide automated scripts to instantly download the correct dependencies, fetch the local LLaMA model, and boot the robot:
+- **Windows:** Run `run.bat`
+- **Linux/macOS:** Run `bash run.sh`
+
+**Option B: Manual Virtual Environment Setup**
+1. **Create** the virtual environment in the project root:
+   ```bash
+   python -m venv .venv
+   ```
+2. **Activate** the virtual environment:
+   - Windows: `.venv\Scripts\activate`
+   - Linux/macOS: `source .venv/bin/activate`
+3. **Install Dependencies** exactly matching the project standards:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Pull Local Brain Model** (Ensure Ollama is installed):
+   ```bash
+   ollama pull llama3.2:1b
+   ```
+5. **Run**:
+   ```bash
+   python src/robot_brain.py
+   ```
+
+### 3. Usage & Execution
+1. Upload `motor_control.ino` to the Arduino Mega.
+2. Note: If you test via Serial Monitor first, **CLOSE IT** before running Python, as it hogs the COM port!
+3. Execute the Python script (or use the `run` scripts).
+4. **Speak completely naturally**: *"Go fast forward for two seconds, then go left for one second."*
+5. The Robot Brain will instantly parse the sequence using heuristics, invoke LLaMA for complex logic, confirm its plan out loud using TTS, and seamlessly move the chassis!
 
 Terminal shows:
 👂 Speak...
