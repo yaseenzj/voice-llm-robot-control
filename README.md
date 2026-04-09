@@ -43,7 +43,7 @@ I hate manual setup as much as you do. Use the script:
 chmod +x run.sh
 ./run.sh
 ```
-*Basically, it does everything for you. All you need to do next is speak.*
+*Basically, it does everything for you. All you need to do next is speak. Say Go Forward/Backward/Left/Right for a specific time period.*
 
 ### **The "I want to do it myself" Way**
 ```bash
