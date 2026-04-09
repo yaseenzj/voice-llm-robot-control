@@ -1,23 +1,39 @@
 #!/bin/bash
 echo "🤖 Setting up Voice LLM Robot Control..."
 
-# Check if pip is available
-if ! command -v pip &> /dev/null
-then
-    echo "❌ pip could not be found. Please ensure Python is installed with pip."
-    exit
+# Check for Python
+if ! command -v python3 &> /dev/null; then
+    echo "❌ python3 could not be found. Please install Python 3."
+    exit 1
 fi
 
-echo "📦 Installing required Python libraries from requirements.txt..."
+# 1. Virtual Environment Setup
+if [ ! -d ".venv" ]; then
+    echo "🌐 Creating virtual environment..."
+    python3 -m venv .venv
+fi
+
+echo "🔌 Activating virtual environment..."
+source .venv/bin/activate
+
+# 2. System Dependencies Check (For Linux/WSL)
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if ! dpkg -l | grep -q libespeak1; then
+        echo "⚠️  Missing system dependency: libespeak1"
+        echo "Please run: sudo apt-get update && sudo apt-get install -y libespeak1 portaudio19-dev python3-pyaudio"
+    fi
+fi
+
+echo "📦 Installing/Updating Python libraries..."
+pip install --upgrade pip
 pip install -r requirements.txt
 
-# Try to pull the Ollama model
-if command -v ollama &> /dev/null
-then
-    echo "🧠 Ensuring local LLaMA 3.2 (1B) model is downloaded..."
+# 3. Ollama Check
+if command -v ollama &> /dev/null; then
+    echo "🧠 Ensuring local LLaMA model is ready..."
     ollama pull llama3.2:1b
 else
-    echo "⚠️ Ollama is not installed! Please install it from https://ollama.com before continuing."
+    echo "⚠️  Ollama not detected. Please install it for natural language support."
 fi
 
 echo "🚀 Setup complete! Booting up Robot Brain..."
