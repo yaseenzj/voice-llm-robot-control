@@ -59,10 +59,13 @@ def ask_llama_sequence(user_input):
     url = "http://localhost:11434/api/generate"
     # Prompt simplified to focus on Letter/Number extraction
     prompt = (
+        f"Task: Convert robot commands to JSON movement list.\n"
+        f"Mapping: Forward=F, Backward=B, Left=L, Right=R, Stop=S.\n"
+        f"Slangs: 'cruise/zoom/advance/go' -> F, 'pull a left/hang a left' -> L, 'stay/wait there' -> S.\n"
+        f"Durations: 'a bit/shortly' -> 3, 'a while' -> 10, 'forever' -> 30.\n"
         f"Input: '{user_input}'\n"
-        f"Task: Output ONLY a JSON list for robot movement.\n"
-        f"Map: Forward=F, Backward=B, Left=L, Right=R, Stop=S.\n"
-        f"Format: [{{'cmd': 'LETTER', 'sec': NUMBER}}]"
+        f"Output format: [{{'cmd': 'LETTER', 'sec': NUMBER}}]\n"
+        f"Output ONLY the JSON."
     )
     try:
         response = requests.post(url, json={
@@ -101,11 +104,11 @@ try:
                     for part in valid_parts:
                         # Fast Heuristic Bypass to eliminate LLM processing delay!
                         fast_action = None
-                        if "pause" in part or "stop" in part or "wait" in part: fast_action = 'S'
-                        elif "left" in part or "call" in part: fast_action = 'L'
-                        elif "right" in part: fast_action = 'R'
-                        elif "back" in part or "reverse" in part: fast_action = 'B'
-                        elif any(w in part for w in ["straight", "forward", "great", "fast"]): fast_action = 'F'
+                        if any(w in part for w in ["pause", "stop", "wait", "stay", "halt", "freeze", "hold"]): fast_action = 'S'
+                        elif any(w in part for w in ["left", "west"]): fast_action = 'L'
+                        elif any(w in part for w in ["right", "east"]): fast_action = 'R'
+                        elif any(w in part for w in ["back", "reverse", "retreat", "rear"]): fast_action = 'B'
+                        elif any(w in part for w in ["straight", "forward", "great", "fast", "cruise", "advance", "zoom", "ahead", "go", "call"]): fast_action = 'F'
                         
                         results.append([{'cmd': fast_action, 'sec': 2.0}] if fast_action else None)
 
@@ -128,18 +131,27 @@ try:
                             # Extract Seconds (Prioritize voice detection over LLM guess)
                             voice_nums = re.findall(r'\d+', part)
                             seconds = float(voice_nums[0]) if voice_nums else float(step.get('sec', 2.0))
+                            
+                            # --- SLANG DURATION PARSING ---
+                            if not voice_nums:
+                                if any(w in part for w in ["a bit", "a little", "shortly", "briefly"]): 
+                                    seconds = 3.0
+                                elif any(w in part for w in ["a while", "long time", "forever"]): 
+                                    seconds = 10.0
+                                elif "a second" in part:
+                                    seconds = 1.0
 
                             # --- REFINED HEURISTIC SAFETY LAYER ---
                             # Always trust explicitly spoken keywords over the 1B LLM's guess
-                            if "pause" in part or "stop" in part or "wait" in part:
+                            if any(w in part for w in ["pause", "stop", "wait", "stay", "halt", "freeze", "hold"]):
                                 action = 'S'
-                            elif "left" in part or "call" in part: # 'call' often misheard for 'go'
+                            elif any(w in part for w in ["left", "west"]): 
                                 action = 'L'
-                            elif "right" in part:
+                            elif any(w in part for w in ["right", "east"]):
                                 action = 'R'
-                            elif "back" in part or "reverse" in part:
+                            elif any(w in part for w in ["back", "reverse", "retreat", "rear"]):
                                 action = 'B'
-                            elif any(w in part for w in ["straight", "forward", "great", "fast"]):
+                            elif any(w in part for w in ["straight", "forward", "great", "fast", "cruise", "advance", "zoom", "ahead", "go", "call"]):
                                 action = 'F'
                             elif action == 'S' or action == 'G' or action not in ['F', 'B', 'L', 'R', 'S']:
                                 if "go" in part or "move" in part:
