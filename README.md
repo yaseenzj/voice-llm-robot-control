@@ -40,8 +40,7 @@ Forget memorizing "Move Forward 5 Seconds." Just tell it what to do like a norma
 ### **The 1-Click Version**
 I hate manual setup as much as you do. Use the script:
 ```bash
-chmod +x run.sh
-./run.sh
+bash run.sh
 ```
 *Basically, it does everything for you. All you need to do next is speak. Say Go Forward/Backward/Left/Right for a specific time period.*
 
