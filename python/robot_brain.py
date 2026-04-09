@@ -3,7 +3,7 @@ import pyttsx3, os, sys
 from contextlib import contextmanager
 
 # --- CONFIG ---
-PORT = 'COM3' 
+PORT = '/dev/ttyACM0' 
 MODEL = "llama3.2:1b"
 
 # --- TTS INIT ---
@@ -93,7 +93,7 @@ def ask_llama_sequence(user_input):
 
 try:
     with silence_stderr():
-        mic = sr.Microphone() # Default device (more robust than hardcoded index)
+        mic = sr.Microphone(1) # Default device (more robust than hardcoded index)
     
     with mic as source:
         print("🧹 Calibrating mic... stay quiet.")
