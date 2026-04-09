@@ -1,5 +1,6 @@
 import serial, time, requests, json, re, speech_recognition as sr
-import pyttsx3
+import pyttsx3, os, sys
+from contextlib import contextmanager
 
 # --- CONFIG ---
 PORT = 'COM3' 
@@ -8,6 +9,20 @@ MODEL = "llama3.2:1b"
 # --- TTS INIT ---
 tts_engine = pyttsx3.init()
 tts_engine.setProperty('rate', 160) # Clear speaking rate
+
+@contextmanager
+def silence_stderr():
+    """Context manager to suppress low-level system noise (ALSA, JACK, etc)"""
+    new_stderr = os.open(os.devnull, os.O_WRONLY)
+    old_stderr = os.dup(2)
+    sys.stderr.flush()
+    try:
+        os.dup2(new_stderr, 2)
+        os.close(new_stderr)
+        yield
+    finally:
+        os.dup2(old_stderr, 2)
+        os.close(old_stderr)
 
 try:
     ser = serial.Serial(PORT, 9600, timeout=1)
@@ -77,7 +92,10 @@ def ask_llama_sequence(user_input):
         return []
 
 try:
-    with sr.Microphone(device_index=1) as source:
+    with silence_stderr():
+        mic = sr.Microphone() # Default device (more robust than hardcoded index)
+    
+    with mic as source:
         print("🧹 Calibrating mic... stay quiet.")
         r.adjust_for_ambient_noise(source, duration=2)
         print(f"🚀 BRAIN ONLINE! Talk naturally to the robot.")
