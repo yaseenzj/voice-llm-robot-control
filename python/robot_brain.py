@@ -3,7 +3,7 @@ import pyttsx3, os, sys
 from contextlib import contextmanager
 
 # --- CONFIG ---
-PORT = '/dev/ttyACM0' 
+PORT = '/dev/ttyUSB1' 
 MODEL = "llama3.2:1b"
 
 # --- TTS INIT ---
