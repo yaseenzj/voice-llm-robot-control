@@ -1,86 +1,85 @@
-// --- PINS FROM YOUR HANDWRITTEN NOTES ---
-const int DIR1 = 6;   // Left Direction
-const int PWM1 = 10;  // Left Speed
-const int DIR2 = 5;   // Right Direction
-const int PWM2 = 9;   // Right Speed
+// --- PINS (TCE Robot Hardware) ---
+const int DIR1 = 6; const int PWM1 = 10;
+const int DIR2 = 5; const int PWM2 = 9;
+const int L_ENC_A = 3; 
 
-// --- SPEED SETTINGS ---
-const int SLOW_MOVE_SPEED = 140; 
-const int SLOW_TURN_SPEED = 120; 
+// --- CALIBRATION ---
+const float TICKS_PER_CM = 20.0; 
+const int STOPPING_OFFSET = 3; 
+const float TICKS_PER_DEG = 2.52; // Base calibration for 90 deg
 
-// --- ENCODER PINS ---
-const int L_ENC_B = 2; // Interrupt
-const int L_ENC_A = 3; // Interrupt
+const int MOVE_SPEED = 135; 
+const int TURN_SPEED = 125;
+
 volatile long left_ticks = 0;
-const int TICKS_FOR_90 = 480; 
 
 void setup() {
   Serial.begin(9600);
-  
   pinMode(DIR1, OUTPUT); pinMode(PWM1, OUTPUT);
   pinMode(DIR2, OUTPUT); pinMode(PWM2, OUTPUT);
-  
-  pinMode(L_ENC_B, INPUT_PULLUP);
-  pinMode(L_ENC_A, INPUT_PULLUP);
-  
-  // Attach interrupts for precise counting
-  attachInterrupt(digitalPinToInterrupt(L_ENC_B), [](){ left_ticks++; }, RISING);
   attachInterrupt(digitalPinToInterrupt(L_ENC_A), [](){ left_ticks++; }, RISING);
-  
   stopRobot();
-  Serial.println("System Ready: Slow Mode + Logic Fixed");
 }
 
 void loop() {
   if (Serial.available() > 0) {
-    char cmd = Serial.read();
-    
-    if (cmd == 'F')      moveForward();
-    else if (cmd == 'B') moveBackward(); // Now defined below
-    else if (cmd == 'S') stopRobot();
-    else if (cmd == 'L') pivotLeft();    // Just turns, no auto-forward
-    else if (cmd == 'R') pivotRight();   // Just turns, no auto-forward
+    char cmd = Serial.read();    
+    int val = Serial.parseInt(); 
+    while(Serial.available() > 0) Serial.read(); 
+
+    switch (cmd) {
+      case 'F': moveDistance(val, LOW);  break;
+      case 'B': moveDistance(val, HIGH); break;
+      case 't': moveByTime(val, LOW);    break; 
+      case 'b': moveByTime(val, HIGH);   break; 
+      case 'L': pivot(val, true);        break;
+      case 'R': pivot(val, false);       break;
+      case 'S': stopRobot();             break;
+    }
   }
 }
 
-// --- MOVEMENT FUNCTIONS ---
-
-void moveForward() {
-  digitalWrite(DIR1, LOW); 
-  digitalWrite(DIR2, LOW);
-  analogWrite(PWM1, SLOW_MOVE_SPEED);  
-  analogWrite(PWM2, SLOW_MOVE_SPEED);
-}
-
-void moveBackward() {
-  // Setting DIR pins HIGH reverses the Cytron Maker Drive channels
-  digitalWrite(DIR1, HIGH); 
-  digitalWrite(DIR2, HIGH);
-  analogWrite(PWM1, SLOW_MOVE_SPEED);  
-  analogWrite(PWM2, SLOW_MOVE_SPEED);
-}
-
-void pivotLeft() {
+void moveDistance(int cm, int direction) {
+  if (cm <= 0) return;
+  int targetCm = (cm > STOPPING_OFFSET) ? cm - STOPPING_OFFSET : 0;
+  long targetTicks = targetCm * TICKS_PER_CM;
   left_ticks = 0;
-  digitalWrite(DIR1, HIGH); // Left Back
-  digitalWrite(DIR2, LOW);  // Right Forward
-  analogWrite(PWM1, SLOW_TURN_SPEED);   
-  analogWrite(PWM2, SLOW_TURN_SPEED);
-  while(left_ticks < TICKS_FOR_90); 
-  stopRobot(); 
+  digitalWrite(DIR1, direction); digitalWrite(DIR2, direction);
+  analogWrite(PWM1, MOVE_SPEED); analogWrite(PWM2, MOVE_SPEED);
+  while(left_ticks < targetTicks); 
+  stopRobot();
 }
 
-void pivotRight() {
+void pivot(int degrees, bool isLeft) {
+  if (degrees <= 0) degrees = 90; 
+  
+  // --- DYNAMIC COMPENSATION FOR SLIP/FRICTION ---
+  float compensation = 1.0; 
+  if (degrees >= 350) compensation = 1.025;      // +2.5% for 360
+  else if (degrees >= 175) compensation = 1.035; // +3.5% for 180
+  
+  long targetTicks = (long)(degrees * TICKS_PER_DEG * compensation);
+  
   left_ticks = 0;
-  digitalWrite(DIR1, LOW);  // Left Forward
-  digitalWrite(DIR2, HIGH); // Right Back
-  analogWrite(PWM1, SLOW_TURN_SPEED);   
-  analogWrite(PWM2, SLOW_TURN_SPEED);
-  while(left_ticks < TICKS_FOR_90); 
+  if(isLeft) { 
+    digitalWrite(DIR1, HIGH); digitalWrite(DIR2, LOW); 
+  } else { 
+    digitalWrite(DIR1, LOW); digitalWrite(DIR2, HIGH); 
+  }
+  
+  analogWrite(PWM1, TURN_SPEED); analogWrite(PWM2, TURN_SPEED);
+  while(left_ticks < targetTicks); 
+  stopRobot();
+}
+
+void moveByTime(int seconds, int direction) {
+  digitalWrite(DIR1, direction); digitalWrite(DIR2, direction);
+  analogWrite(PWM1, MOVE_SPEED); analogWrite(PWM2, MOVE_SPEED);
+  delay(seconds * 1000);
   stopRobot();
 }
 
 void stopRobot() {
-  analogWrite(PWM1, 0); 
-  analogWrite(PWM2, 0);
+  digitalWrite(DIR1, 0); digitalWrite(DIR2, 0);
+  digitalWrite(PWM1, 0); digitalWrite(PWM2, 0);
 }
