@@ -108,9 +108,17 @@ def parse_command(text):
         
     return action, val, unit, mult, u_label, dir_name
 
+# --- MIC SELECTION ---
+device_index = None
+if len(sys.argv) > 1:
+    try:
+        device_index = int(sys.argv[1])
+        print(f"🎤 Using Microphone Index: {device_index}")
+    except: pass
+
 try:
     with silence_stderr():
-        mic = sr.Microphone()
+        mic = sr.Microphone(device_index=device_index)
     
     with mic as source:
         print("🔍 Calibrating Mic...")
