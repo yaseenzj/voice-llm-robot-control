@@ -1,73 +1,91 @@
 # Voice-LLM Robot 
 
+<img src="images/robot_closeup.jpeg" alt="Robot Closeup" width="100%" height="150" style="object-fit: cover;">
+
 ### **Stop talking to walls. Talk to your hardware.**
-Most "voice-controlled" robots are just glorified remote controls with a limited vocabulary. This one has a local **LLaMA 3.2** brain running on a Jetson Nano (or Raspberry Pi), meaning it actually understands what you want, even if you don't say it perfectly. It's the difference between a scripted NPC and a physical agent that thinks.
+Most "voice-controlled" robots are just glorified remote controls. This one has a real **AI Brain (LLaMA 3.2)**. It doesn't just listen; it *understands* what you want, even if you use slang or different measurements.
 
 ---
 
-## 🎬 The Actual Experience
-Forget memorizing "Move Forward 5 Seconds." Just tell it what to do like a normal person.
-> *"Yo, go forward 50 cm, then turn left and go forward for 30cm then turn left and go forward for 1 second then turn 90 degree to the ;eft.."*
+## 🎬 The Experience
+You don't need to memorize commands. Just speak naturally:
+> *"Yo, go forward 50 cm, then turn left and go forward for 30cm then turn left and go forward for 1 second then turn 90 degree to the left.."*
 
-### **Why this isn't just another tutorial project:**
-* **Privacy by Default:** Everything runs on-device. No data leaves your room, and no big-tech company is listening.
-* **Smart Intent Recognition:** It handles unit conversions (meters, cm, seconds) and slang naturally.
-* **Robust Hardware Setup:** Optimized for **Arduino Nano** for real-time motor control and **Jetson Nano/Pi** for the AI brain.
-* **Zero-Config Setup:** A smart script handles system dependencies, audio drivers, and microphone selection for you.
+![Robot Demo](images/IMG_5383.gif)
 
 ---
 
-## 🏗️ The Hardware Stack
+## 🤔 How does it work? (For Non-Techies)
+1. **The Ears (Microphone)**: Captures your voice.
+2. **The Brain (Raspberry Pi + AI)**: Uses **Ollama** (an AI engine) to understand your intent.
+3. **The Muscles (Arduino Nano)**: Receives the "thought" and physically moves the wheels.
 
-| Component | The Job |
+---
+
+## 🏗️ What you need
+| Part | Role |
 | :--- | :--- |
-| **Raspberry Pi 4B** | The Pre-frontal Cortex. Handles mic input, speech-to-text, and the AI brain. |
-| **Arduino Nano** | The muscles. Handles high-frequency PWM and encoder feedback via Serial. |
-| **L298N Driver** | The nervous system. Bridges the logic power to the high-current motors. |
-| **12V LiPo** | The heart. Providing the juice to actually move. |
-| **Microphone** | The ears. Captures your voice commands. |
-
-**Recommended Microphone:** [Digitek Wireless Microphone (DWM 101)](https://amzn.in/d/0imarqwx)
+| **Raspberry Pi** | The AI Brain (where the thinking happens). |
+| **Arduino Nano** | The Muscle (where the moving happens). |
+| **Microphone** | The Ears (to hear your commands). |
+| **L298N Driver** | The Power Bridge (to move the motors). |
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Easy Setup Guide
 
-### **1. The Easy Way (One-Click Setup)**
-I've automated the headache. The `run.sh` script installs requirements, fixes common Linux audio errors (Error 524), and helps you select your microphone.
+### **Step 1: Download the Project**
+Open your terminal on the Raspberry Pi and paste this:
+```bash
+git clone https://github.com/yaseenzj/voice-llm-robot-control.git
+cd voice-llm-robot-control
+```
+
+### **Step 2: Install the AI Engine (Ollama)**
+This gives your robot its "intelligence." Run these two lines:
+```bash
+# Install Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Download the LLaMA Brain
+ollama pull llama3.2:1b
+```
+
+### **Step 3: Prepare the Muscles (Arduino)**
+1. Connect your **Arduino Nano** to your computer.
+2. Open the file `arduino/motor_control/motor_control.ino` in the Arduino software.
+3. Click **Upload**.
+4. Now, plug the Arduino into your Raspberry Pi using a USB cable.
+
+> [!TIP]
+> **Stable Connection**: The code is pre-configured to use the permanent port `/dev/robot_nano`. This means your robot will always find its "muscles" correctly, even if you swap USB ports!
+
+### **Step 4: Wake it Up! ⚡**
+
+#### **🚀 The Easy Way (Recommended)**
+Run this script and follow the on-screen instructions to select your microphone:
 ```bash
 bash run.sh
 ```
 
-### **2. The Manual Way**
+#### **🛠️ The Manual Way**
+If you prefer running it manually (replace `[ID]` with your mic index):
 ```bash
-# Set up the environment
 python3 -m venv .venv
-source .venv/bin/activate 
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Start the brain (Select your mic ID when prompted)
-python3 python/robot_encoded.py [MIC_ID]
+source .venv/bin/activate
+python3 python/robot_encoded.py [ID]
 ```
-
-### **3. Arduino Setup**
-1. Open `arduino/motor_control/motor_control.ino` in the Arduino IDE.
-2. Select **Arduino Nano** (Old Bootloader often required) or your specific board.
-3. Upload and connect the USB cable to your AI controller.
 
 ---
 
 ## 🛠️ Key Features
-* **Microphone Auto-Detection:** No more hardcoding device IDs. The script detects and lets you choose on launch.
-* **Audio Conflict Fix:** Built-in `pulseaudio` management to prevent the "ALSA busy" errors during simultaneous listening and speaking.
-* **Calibrated Movement:** Uses encoder feedback (ticks) for precise distance (CM) and rotation (Degrees).
+* **Talk Naturally**: Use "cm", "meters", "seconds", or even slang.
+* **Easy Mic Setup**: The robot will ask you which microphone you want to use.
+* **Auto-Fix**: The script automatically fixes common audio errors so you don't have to.
 
 ---
 
-## 🔮 Future Upgrades:
-* **Computer Vision:** Mount a camera for Multimodal AI. Say *"Find the red ball"* or *"Follow me."*
-* **SLAM & Mapping:** Use RP-Lidar for Global Navigation. Ask the robot to *"Go to the kitchen."*
-* **Obstacle Avoidance:** Add ultrasonic sensors for a "Reflex Layer" to prevent crashes.
-* **Semantic Memory:** Use a Vector Database (RAG) so it remembers landmarks like *"my charger."*
+## 🔮 Future Upgrades
+* **Eyes**: Add a camera so it can "see" objects.
+* **Safety**: Add sensors so it doesn't bump into walls.
+* **Memory**: Make it remember where its charger is.

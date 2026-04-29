@@ -1,12 +1,10 @@
-// --- PINS (TCE Robot Hardware) ---
 const int DIR1 = 6; const int PWM1 = 10;
 const int DIR2 = 5; const int PWM2 = 9;
 const int L_ENC_A = 3; 
 
-// --- CALIBRATION ---
 const float TICKS_PER_CM = 20.0; 
 const int STOPPING_OFFSET = 3; 
-const float TICKS_PER_DEG = 2.52; // Base calibration for 90 deg
+const float TICKS_PER_DEG = 2.52;
 
 const int MOVE_SPEED = 135; 
 const int TURN_SPEED = 125;
@@ -53,7 +51,6 @@ void moveDistance(int cm, int direction) {
 void pivot(int degrees, bool isLeft) {
   if (degrees <= 0) degrees = 90; 
   
-  // --- DYNAMIC COMPENSATION FOR SLIP/FRICTION ---
   float compensation = 1.0; 
   if (degrees >= 350) compensation = 1.025;      // +2.5% for 360
   else if (degrees >= 175) compensation = 1.035; // +3.5% for 180

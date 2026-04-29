@@ -2,11 +2,9 @@ import serial, time, re, speech_recognition as sr
 import pyttsx3, os, sys, threading
 from contextlib import contextmanager
 
-# --- CONFIG ---
 PORT = '/dev/robot_nano' 
 ROBOT_SPEED_CM_S = 41.25 
 
-# --- INIT ---
 tts_engine = pyttsx3.init()
 tts_engine.setProperty('rate', 175) 
 
@@ -32,7 +30,6 @@ def init_serial():
 
 ser = init_serial()
 r = sr.Recognizer()
-# Microphone Sensitivity Tuning
 r.energy_threshold = 350
 r.dynamic_energy_threshold = True
 r.pause_threshold = 1.2 
@@ -64,7 +61,6 @@ def execute_moves(planned_moves):
             ser = init_serial()
             if ser: ser.write(packet.encode())
 
-        # Dynamic Wait Calculation
         if action in ['L', 'R']:
             wait_time = (value / 90.0) * 1.65 # Extra time for long turns
         elif unit == 'time':
@@ -77,7 +73,6 @@ def execute_moves(planned_moves):
     except: pass
 
 def parse_command(text):
-    # Word-to-Digit cleanup
     text = text.replace("one", "1").replace("two", "2").replace("three", "3")
     
     nums = re.findall(r'\d+', text)
@@ -85,7 +80,7 @@ def parse_command(text):
     
     unit, mult, u_label = None, 1, ""
     
-    # Unit mapping (Meter detection prioritized over CM)
+    
     if "degree" in text or " deg" in text: 
         unit, u_label = 'deg', "degrees"
     elif "meter" in text or " m " in text or text.endswith(" m"): 
@@ -101,14 +96,13 @@ def parse_command(text):
     elif any(w in text for w in ['back', 'backward', 'reverse']): action, dir_name = 'B', "moving backward"
     elif any(w in text for w in ['forward', 'go', 'move', 'front']): action, dir_name = 'F', "moving forward"
     
-    # Instant Turn Override
     if action in ['L', 'R'] and val is not None:
         unit = 'deg'
         u_label = "degrees"
         
     return action, val, unit, mult, u_label, dir_name
 
-# --- MIC SELECTION ---
+
 device_index = None
 if len(sys.argv) > 1:
     try:
@@ -139,7 +133,6 @@ try:
                     speak("Stopping.")
                     continue
 
-                # Sequential Parser
                 parts = re.split(r' then | and | after that ', text)
                 all_tasks = []
                 replies = []
@@ -148,11 +141,9 @@ try:
                     action, val, unit, mult, u_label, dir_name = parse_command(part)
 
                     if action:
-                        # Instant 180/360 logic
                         if action in ['L', 'R'] and val is None:
                             val, unit, u_label = 90, 'deg', "degrees"
                         
-                        # Clarification loop for linear moves
                         if action in ['F', 'B'] and val is None:
                             speak(f"How far should I {dir_name}?")
                             a_sub = r.listen(source, timeout=5, phrase_time_limit=5)

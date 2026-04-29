@@ -3,13 +3,11 @@ echo "=========================================="
 echo "   🤖 Voice LLM Robot Control Setup 🤖   "
 echo "=========================================="
 
-# Check for Python
 if ! command -v python3 &> /dev/null; then
     echo "❌ python3 could not be found. Please install Python 3."
     exit 1
 fi
 
-# 1. Virtual Environment Setup
 if [ ! -d ".venv" ]; then
     echo "🔌 Creating virtual environment..."
     python3 -m venv .venv
@@ -18,11 +16,9 @@ fi
 echo "🔌 Activating virtual environment..."
 source .venv/bin/activate
 
-# 2. System Dependencies Check (For Linux)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "📦 Checking system dependencies..."
     
-    # Check for ALSA/Espeak/PortAudio
     MISSING_DEPS=""
     if ! dpkg -l | grep -q libespeak1; then MISSING_DEPS="$MISSING_DEPS libespeak1"; fi
     if ! dpkg -l | grep -q portaudio19-dev; then MISSING_DEPS="$MISSING_DEPS portaudio19-dev"; fi
@@ -33,7 +29,6 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         sudo apt-get update && sudo apt-get install -y $MISSING_DEPS
     fi
 
-    # PulseAudio fix for "Error 524" (ALSA busy)
     if ! pgrep -x "pulseaudio" > /dev/null; then
         echo "🔊 Starting PulseAudio to prevent ALSA conflicts..."
         pulseaudio --start --exit-idle-time=-1
@@ -44,11 +39,16 @@ echo "📦 Installing/Updating Python libraries..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 3. Microphone Selection Logic
+if command -v ollama &> /dev/null; then
+    echo "🧠 Ensuring local LLaMA model is ready..."
+    ollama pull llama3.2:1b
+else
+    echo "⚠️ Ollama not detected. Natural language features might be limited."
+fi
+
 echo ""
 echo "🔍 Detecting Microphones..."
 while true; do
-    # Get list of mics using python
     MICS=$(python3 -c "import speech_recognition as sr; [print(f'{i}: {n}') for i, n in enumerate(sr.Microphone.list_microphone_names())]" 2>/dev/null)
     
     if [ -z "$MICS" ]; then
