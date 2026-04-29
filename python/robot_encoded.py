@@ -183,29 +183,35 @@ try:
                 speak("Stopping.")
                 continue
 
-            # --- AI BRAIN PROCESSING ---
-            print("🧠 AI Brain thinking...")
-            moves = ask_llama_sequence(text)
+            # --- HYBRID BRAIN PROCESSING ---
             all_tasks = []
             replies = []
 
-            if not moves:
-                # Fallback to Regex if AI fails
-                parts = re.split(r' then | and | after that ', text)
-                for part in parts:
-                    action, val, unit, mult, u_label, dir_name = parse_command(part)
-                    if action and val is not None:
-                        all_tasks.append((action, val * mult, unit))
-                        replies.append(f"{dir_name} for {int(val)} {u_label}")
-            else:
+            # Phase 1: Keyword/Regex Parsing (Instant)
+            # Split input to handle sequences like "move forward and then turn left"
+            text_parts = re.split(r' then | and | after that | followed by ', text)
+            for part in text_parts:
+                action, val, unit, mult, u_label, dir_name = parse_command(part)
+                if action and val is not None:
+                    all_tasks.append((action, val * mult, unit))
+                    replies.append(f"{dir_name} for {int(val)} {u_label}")
+
+            # Phase 2: Local LLM Fallback (Smart but Slower)
+            # Only call the LLM if keyword parsing found nothing
+            if not all_tasks:
+                print("🧠 Keywords didn't catch that, asking AI Brain...")
+                moves = ask_llama_sequence(text)
                 for move in moves:
                     action = move.get('cmd', 'S').upper()
                     val = float(move.get('val', 2.0))
                     unit = move.get('unit', 'dist')
                     
                     dir_map = {'F': "moving forward", 'B': "moving backward", 'L': "turning left", 'R': "turning right"}
-                    all_tasks.append((action, val, unit))
-                    replies.append(f"{dir_map.get(action, 'acting')} for {int(val)} {unit}")
+                    if action in dir_map:
+                        all_tasks.append((action, val, unit))
+                        replies.append(f"{dir_map.get(action)} for {int(val)} {unit}")
+            else:
+                print("⚡ Instant Keyword match!")
 
             if all_tasks:
                 speak("Got it Yaseen, I am " + " then ".join(replies) + ".")
