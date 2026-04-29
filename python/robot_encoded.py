@@ -112,20 +112,36 @@ if len(sys.argv) > 1:
         print(f"🎤 Using Microphone Index: {device_index}")
     except: pass
 
+# --- MIC INITIALIZATION ---
+def safe_mic_call(func, *args, **kwargs):
+    """Safely handles mic operations to avoid the known NoneType close() bug."""
+    global device_index
+    try:
+        with silence_stderr():
+            with sr.Microphone(device_index=device_index) as source:
+                if source.stream is None:
+                    raise RuntimeError("Microphone stream is None")
+                return func(source, *args, **kwargs)
+    except (AttributeError, AssertionError, Exception) as e:
+        if device_index is not None:
+            print(f"⚠️ Mic ID {device_index} failed ({type(e).__name__}). Falling back to default...")
+            device_index = None
+            return safe_mic_call(func, *args, **kwargs)
+        else:
+            print(f"❌ Microphone Error: {e}")
+            speak("I can't access the microphone. Please check connections.")
+            sys.exit(1)
+
 try:
     print("🔍 Calibrating Mic...")
-    with silence_stderr():
-        with sr.Microphone(device_index=device_index) as source:
-            r.adjust_for_ambient_noise(source, duration=2)
-    
+    safe_mic_call(r.adjust_for_ambient_noise, duration=2)
     speak("Ready for you, Yaseen.")
     
     while True:
         try:
             print("\n👂 Listening...")
-            with silence_stderr():
-                with sr.Microphone(device_index=device_index) as source:
-                    audio = r.listen(source, phrase_time_limit=15)
+            audio = safe_mic_call(r.listen, phrase_time_limit=15)
+            if not audio: continue
             
             text = r.recognize_google(audio).lower()
             print(f"👤 Yaseen: {text}")
