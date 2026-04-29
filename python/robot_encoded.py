@@ -1,11 +1,10 @@
-import serial, time, re, speech_recognition as sr
-import pyttsx3, os, sys, threading
+import serial, time, re, requests, json, threading, os, sys
+import speech_recognition as sr
 from contextlib import contextmanager
 
 PORT = '/dev/robot_nano' 
 ROBOT_SPEED_CM_S = 41.25 
-
-
+MODEL = "llama3.2:1b"
 
 @contextmanager
 def silence_stderr():
@@ -37,7 +36,6 @@ stop_execution_flag = False
 
 def speak(text):
     print(f"\n🤖 {text}")
-    # Direct espeak call through pulse mixer to avoid ALSA locks
     os.system(f'espeak -s 175 "{text}" --stdout | aplay -D pulse > /dev/null 2>&1')
 
 def execute_moves(planned_moves):
@@ -49,7 +47,6 @@ def execute_moves(planned_moves):
         
         cmd_letter = 'b' if (unit == 'time' and action == 'B') else \
                      ('t' if unit == 'time' else action)
-
         packet = f"{cmd_letter}{int(value)};"
         
         try:
@@ -76,14 +73,10 @@ def parse_command(text):
     nums = re.findall(r'\d+', text)
     val = float(nums[0]) if nums else None
     unit, mult, u_label = None, 1, ""
-    if "degree" in text or " deg" in text: 
-        unit, u_label = 'deg', "degrees"
-    elif "meter" in text or " m " in text or text.endswith(" m"): 
-        unit, mult, u_label = 'dist', 100, "meters"
-    elif "cm" in text or "centimeter" in text: 
-        unit, u_label = 'dist', "centimeters"
-    elif "second" in text or "sec" in text: 
-        unit, u_label = 'time', "seconds"
+    if "degree" in text or " deg" in text: unit, u_label = 'deg', "degrees"
+    elif "meter" in text or " m " in text or text.endswith(" m"): unit, mult, u_label = 'dist', 100, "meters"
+    elif "cm" in text or "centimeter" in text: unit, u_label = 'dist', "centimeters"
+    elif "second" in text or "sec" in text: unit, u_label = 'time', "seconds"
 
     action, dir_name = None, ""
     if 'left' in text: action, dir_name = 'L', "turning left"
@@ -92,10 +85,25 @@ def parse_command(text):
     elif any(w in text for w in ['forward', 'go', 'move', 'front']): action, dir_name = 'F', "moving forward"
     
     if action in ['L', 'R'] and val is not None:
-        unit = 'deg'
-        u_label = "degrees"
+        unit, u_label = 'deg', "degrees"
         
     return action, val, unit, mult, u_label, dir_name
+
+def ask_llama_sequence(user_input):
+    url = "http://localhost:11434/api/generate"
+    prompt = (
+        f"Task: Convert robot commands to JSON movement list.\n"
+        f"Mapping: Forward=F, Backward=B, Left=L, Right=R, Stop=S.\n"
+        f"Input: '{user_input}'\n"
+        f"Output format: [{{'cmd': 'LETTER', 'val': NUMBER, 'unit': 'dist/deg/time'}}]\n"
+        f"Output ONLY the JSON."
+    )
+    try:
+        response = requests.post(url, json={
+            "model": MODEL, "prompt": prompt, "stream": False, "format": "json", "options": {"temperature": 0}
+        }, timeout=10)
+        return json.loads(response.json().get('response', '[]'))
+    except: return []
 
 device_index = None
 if len(sys.argv) > 1:
@@ -129,28 +137,29 @@ try:
                 speak("Stopping.")
                 continue
 
-            parts = re.split(r' then | and | after that ', text)
+            # --- AI BRAIN PROCESSING ---
+            print("🧠 AI Brain thinking...")
+            moves = ask_llama_sequence(text)
             all_tasks = []
             replies = []
 
-            for part in parts:
-                action, val, unit, mult, u_label, dir_name = parse_command(part)
-                if action:
-                    if action in ['L', 'R'] and val is None:
-                        val, unit, u_label = 90, 'deg', "degrees"
-                    
-                    if action in ['F', 'B'] and val is None:
-                        speak(f"How far should I {dir_name}?")
-                        with silence_stderr():
-                            with sr.Microphone(device_index=device_index) as source:
-                                a_sub = r.listen(source, timeout=5, phrase_time_limit=5)
-                        s_text = r.recognize_google(a_sub).lower()
-                        _, val, unit, mult, u_label, _ = parse_command(s_text)
-
+            if not moves:
+                # Fallback to Regex if AI fails
+                parts = re.split(r' then | and | after that ', text)
+                for part in parts:
+                    action, val, unit, mult, u_label, dir_name = parse_command(part)
                     if action and val is not None:
-                        if unit is None: unit = 'dist'
                         all_tasks.append((action, val * mult, unit))
                         replies.append(f"{dir_name} for {int(val)} {u_label}")
+            else:
+                for move in moves:
+                    action = move.get('cmd', 'S').upper()
+                    val = float(move.get('val', 2.0))
+                    unit = move.get('unit', 'dist')
+                    
+                    dir_map = {'F': "moving forward", 'B': "moving backward", 'L': "turning left", 'R': "turning right"}
+                    all_tasks.append((action, val, unit))
+                    replies.append(f"{dir_map.get(action, 'acting')} for {int(val)} {unit}")
 
             if all_tasks:
                 speak("Got it Yaseen, I am " + " then ".join(replies) + ".")
