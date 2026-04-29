@@ -129,29 +129,38 @@ if len(sys.argv) > 1:
 
 # --- MIC INITIALIZATION ---
 def safe_mic_call(func, *args, **kwargs):
-    """Safely handles mic operations to avoid the known NoneType close() bug."""
+    """Safely handles mic operations with sample rate retries for Pi/USB hardware."""
     global device_index
-    try:
-        with silence_stderr():
-            with sr.Microphone(device_index=device_index) as source:
-                if source.stream is None:
-                    raise RuntimeError("Microphone stream is None")
-                return func(source, *args, **kwargs)
-    except (AttributeError, AssertionError, Exception) as e:
-        if device_index is not None:
-            print(f"⚠️ Mic ID {device_index} failed ({type(e).__name__}). Falling back to default...")
-            device_index = None
-            return safe_mic_call(func, *args, **kwargs)
-        else:
-            print(f"❌ Microphone Error: {e}")
-            if "No Default Input Device Available" in str(e):
-                print("\n💡 TROUBLESHOOTING TIPS:")
-                print("1. If on WSL: Audio is not bridged by default. Run 'pulseaudio --start' on Windows.")
-                print("2. Linux Permissions: Run 'sudo usermod -aG audio $USER' and restart.")
-                print("3. Busy Device: Ensure no other app (Discord, Zoom) is using the mic.")
-                print("4. Virtual Environment: Ensure PortAudio is installed ('sudo apt install portaudio19-dev').")
-            speak("I can't access the microphone. Please check connections.")
-            sys.exit(1)
+    rates = [16000, 44100, 48000]
+    last_err = None
+
+    for rate in rates:
+        try:
+            with silence_stderr():
+                # We use a smaller chunk_size for better responsiveness on Pi
+                with sr.Microphone(device_index=device_index, sample_rate=rate) as source:
+                    if source.stream is None:
+                        raise RuntimeError("Microphone stream is None")
+                    # Success!
+                    return func(source, *args, **kwargs)
+        except (AttributeError, AssertionError, Exception) as e:
+            last_err = e
+            continue # Try next sample rate
+            
+    # If all rates failed for the specific device, try falling back to default
+    if device_index is not None:
+        print(f"⚠️ Mic ID {device_index} failed at all rates. Trying default device...")
+        device_index = None
+        return safe_mic_call(func, *args, **kwargs)
+    else:
+        print(f"❌ Microphone Error: {last_err}")
+        if "No Default Input Device Available" in str(last_err):
+            print("\n💡 TROUBLESHOOTING TIPS:")
+            print("1. Raspberry Pi: Ensure your USB mic is set as default in /etc/asound.conf")
+            print("2. Linux Permissions: Run 'sudo usermod -aG audio $USER' and restart.")
+            print("3. Busy Device: Run 'fuser -v /dev/snd/*' to see what is using audio.")
+        speak("I can't access the microphone. Please check connections.")
+        sys.exit(1)
 
 try:
     print("🔍 Calibrating Mic...")
