@@ -15,7 +15,7 @@ Forget memorizing "Move Forward 5 Seconds." Just tell it what to do like a norma
 * **Privacy by Default:** Everything runs on-device via **Ollama**. No data leaves your room, and no big-tech company is listening.
 * **Conversational Logic:** It handles intent. If you're vague, the LLM fills the gaps. If you're specific, it executes perfectly.
 * **Hybrid Engine:** We use heuristics for the simple stuff (instant response) and the LLM for complex maneuvers.
-* **Hardware Combo:** Uses the **Raspberry Pi** for high-level reasoning and the **Arduino Mega** for rock-solid motor execution.
+* **Hardware Combo:** Uses the **PC/Laptop** for high-level reasoning (LLaMA 3.2) and the **Arduino Nano** for rock-solid motor execution.
 
 ---
 
@@ -25,13 +25,13 @@ Forget memorizing "Move Forward 5 Seconds." Just tell it what to do like a norma
 
 | Component | The Job |
 | :--- | :--- |
-| **Raspberry Pi 4B** | The Pre-frontal Cortex. Handles mic input and the LLaMA 3.2 brain. |
-| **Arduino Mega** | The muscles. Handles real-time PWM and motor pulses via Serial. |
+| **PC / Laptop** | The Pre-frontal Cortex. Handles mic input and the LLaMA 3.2 brain. |
+| **Arduino Nano** | The muscles. Handles real-time PWM and motor pulses via Serial. |
 | **L298N Driver** | The nervous system. Keeps the motors from frying your boards. |
 | **12V LiPo** | The heart. Providing the juice to actually move. |
 | **Microphone** | The ears. Captures your voice commands. |
 
-**Microphone used:** [Digitek Wireless Microphone (DWM 101)](https://amzn.in/d/0imarqwx)
+**Microphone used:** [Digitek Wireless Microphone (DWM 101)](https://amzn.in/d/0imarqwx) - *Note: Using an external microphone is required for accuracy.*
 
 ---
 
@@ -42,7 +42,7 @@ I hate manual setup as much as you do. Use the script:
 ```bash
 bash run.sh
 ```
-*Basically, it does everything for you. All you need to do next is speak. Say Go Forward/Backward/Left/Right for a specific time period.*
+*The script will now list all connected microphones. **You must select the index of your external microphone** (e.g., your Digitek mic). The script will warn you if it detects a built-in mic.*
 
 ### **The "I want to do it myself" Way**
 ```bash
@@ -55,7 +55,8 @@ pip install -r requirements.txt
 ollama pull llama3.2:1b
 
 # Wake it up
-python python/robot_brain.py
+# Wake it up (Replace <index> with your mic index from list_mics.py)
+python python/robot_brain.py <index>
 ```
 
 ---

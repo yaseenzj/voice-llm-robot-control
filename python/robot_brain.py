@@ -3,8 +3,20 @@ import pyttsx3, os, sys
 from contextlib import contextmanager
 
 # --- CONFIG ---
-PORT = '/dev/ttyUSB0' 
+# --- CONFIG ---
+import serial.tools.list_ports
+
+def get_arduino_port():
+    ports = list(serial.tools.list_ports.comports())
+    for p in ports:
+        # Arduino Nano often shows up as USB-SERIAL CH340 or CP2102
+        if "USB-SERIAL" in p.description.upper() or "CH340" in p.description.upper() or "ARDUINO" in p.description.upper():
+            return p.device
+    return 'COM3' if os.name == 'nt' else '/dev/ttyUSB0'
+
+PORT = get_arduino_port()
 MODEL = "llama3.2:1b"
+MIC_INDEX = int(sys.argv[1]) if len(sys.argv) > 1 else None
 
 # --- TTS INIT ---
 tts_engine = pyttsx3.init()
@@ -26,11 +38,13 @@ def silence_stderr():
 
 try:
     ser = serial.Serial(PORT, 9600, timeout=1)
-    print("⏳ Initializing Arduino Mega... Wait 3 seconds.")
+    print(f"Initializing Arduino Nano on {PORT}... Wait 3 seconds.")
     time.sleep(3) 
-    print(f"✅ Robot Connected on {PORT}")
+    print(f"DONE: Robot Connected on {PORT}")
 except Exception as e:
-    print(f"❌ SERIAL ERROR: {e}"); exit()
+    print(f"SERIAL ERROR: Could not connect to {PORT}. {e}")
+    print("TIP: Check if your Arduino Nano is plugged in and you're using the right port.")
+    exit()
 
 r = sr.Recognizer()
 r.pause_threshold = 1.5 
@@ -93,7 +107,39 @@ def ask_llama_sequence(user_input):
 
 try:
     with silence_stderr():
-        mic = sr.Microphone(1) # Default device (more robust than hardcoded index)
+        if MIC_INDEX is None:
+            print("WARNING: No Microphone Index provided. Listing available mics...")
+            import subprocess
+            subprocess.run([sys.executable, "list_mics.py"])
+            print("\n")
+            # In some environments, input() might be tricky in a background process, 
+            # but since this is run by the user in a terminal it should be fine.
+            try:
+                user_choice = input("Enter the index of your EXTERNAL microphone: ")
+                MIC_INDEX = int(user_choice)
+            except ValueError:
+                print("ERROR: Invalid input. Please enter a number.")
+                exit()
+        
+        # Validation: Check if it's likely a built-in mic
+        mics = sr.Microphone.list_microphone_names()
+        if MIC_INDEX < 0 or MIC_INDEX >= len(mics):
+            print(f"ERROR: Index {MIC_INDEX} is out of range.")
+            exit()
+
+        selected_mic_name = mics[MIC_INDEX].lower()
+        if "array" in selected_mic_name or "built-in" in selected_mic_name:
+            print(f"WARNING: '{mics[MIC_INDEX]}' looks like a built-in mic!")
+            print("This project requires an EXTERNAL microphone (like Digitek) for better accuracy.")
+            try:
+                choice = input("Do you want to continue anyway? (y/N): ").lower()
+                if choice != 'y':
+                    print("Exiting. Please connect an external mic and try again.")
+                    exit()
+            except EOFError:
+                print("Skipping confirmation due to environment constraints.")
+
+        mic = sr.Microphone(device_index=MIC_INDEX)
     
     with mic as source:
         print("🧹 Calibrating mic... stay quiet.")
