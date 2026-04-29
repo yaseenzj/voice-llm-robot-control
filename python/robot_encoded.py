@@ -1,10 +1,9 @@
 import serial, time, re, speech_recognition as sr
-import pyttsx3, os, sys, threading, requests, json
+import pyttsx3, os, sys, threading
 from contextlib import contextmanager
 
 PORT = '/dev/robot_nano' 
 ROBOT_SPEED_CM_S = 41.25 
-MODEL = "llama3.2:1b"
 
 tts_engine = pyttsx3.init()
 tts_engine.setProperty('rate', 175) 
@@ -103,21 +102,6 @@ def parse_command(text):
         
     return action, val, unit, mult, u_label, dir_name
 
-def ask_llama(text):
-    url = "http://localhost:11434/api/generate"
-    prompt = (
-        f"Convert this robot command to JSON.\n"
-        f"Actions: F (Forward), B (Backward), L (Left), R (Right), S (Stop).\n"
-        f"Units: dist (for cm/meters), deg (for degrees), time (for seconds).\n"
-        f"Slang: 'a bit'=5, 'a while'=15, 'fast'=30.\n"
-        f"Input: '{text}'\n"
-        f"Output ONLY JSON: {{\"action\": \"F/B/L/R/S\", \"val\": number, \"unit\": \"dist/deg/time\"}}"
-    )
-    try:
-        r = requests.post(url, json={"model": MODEL, "prompt": prompt, "stream": False, "format": "json"}, timeout=10)
-        return json.loads(r.json().get('response', '{}'))
-    except: return {}
-
 
 device_index = None
 if len(sys.argv) > 1:
@@ -170,18 +154,6 @@ try:
                             if unit is None: unit = 'dist'
                             all_tasks.append((action, val * mult, unit))
                             replies.append(f"{dir_name} for {int(val)} {u_label}")
-                        else:
-                            # Fallback to LLM Brain
-                            print(f"🧠 Brain thinking about: {part}")
-                            res = ask_llama(part)
-                            l_act = res.get('action')
-                            l_val = res.get('val')
-                            l_unit = res.get('unit', 'dist')
-                            
-                            if l_act and l_val:
-                                all_tasks.append((l_act, l_val, l_unit))
-                                d_map = {'F': 'moving forward', 'B': 'moving backward', 'L': 'turning left', 'R': 'turning right', 'S': 'stopping'}
-                                replies.append(f"{d_map.get(l_act, 'acting')} for {int(l_val)} {l_unit}")
 
                 if all_tasks:
                     speak("Got it Yaseen, I am " + " then ".join(replies) + ".")
