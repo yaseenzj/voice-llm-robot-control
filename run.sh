@@ -21,6 +21,7 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     
     MISSING_DEPS=""
     if ! dpkg -l | grep -q libespeak1; then MISSING_DEPS="$MISSING_DEPS libespeak1"; fi
+    if ! dpkg -l | grep -q espeak; then MISSING_DEPS="$MISSING_DEPS espeak"; fi
     if ! dpkg -l | grep -q portaudio19-dev; then MISSING_DEPS="$MISSING_DEPS portaudio19-dev"; fi
     if ! dpkg -l | grep -q python3-pyaudio; then MISSING_DEPS="$MISSING_DEPS python3-pyaudio"; fi
     
