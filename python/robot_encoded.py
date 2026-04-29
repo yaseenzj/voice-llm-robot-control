@@ -62,7 +62,7 @@ def execute_moves(planned_moves):
             if ser: ser.write(packet.encode())
 
         if action in ['L', 'R']:
-            wait_time = (value / 90.0) * 1.65 # Extra time for long turns
+            wait_time = (value / 90.0) * 1.65
         elif unit == 'time':
             wait_time = value
         else:
@@ -74,13 +74,9 @@ def execute_moves(planned_moves):
 
 def parse_command(text):
     text = text.replace("one", "1").replace("two", "2").replace("three", "3")
-    
     nums = re.findall(r'\d+', text)
     val = float(nums[0]) if nums else None
-    
     unit, mult, u_label = None, 1, ""
-    
-    
     if "degree" in text or " deg" in text: 
         unit, u_label = 'deg', "degrees"
     elif "meter" in text or " m " in text or text.endswith(" m"): 
@@ -102,7 +98,6 @@ def parse_command(text):
         
     return action, val, unit, mult, u_label, dir_name
 
-
 device_index = None
 if len(sys.argv) > 1:
     try:
@@ -111,54 +106,57 @@ if len(sys.argv) > 1:
     except: pass
 
 try:
+    print("🔍 Calibrating Mic...")
     with silence_stderr():
-        mic = sr.Microphone(device_index=device_index)
+        with sr.Microphone(device_index=device_index) as source:
+            r.adjust_for_ambient_noise(source, duration=2)
     
-    with mic as source:
-        print("🔍 Calibrating Mic...")
-        r.adjust_for_ambient_noise(source, duration=2)
-        speak("Ready for you, Yaseen.")
-        
-        while True:
-            try:
-                print("\n👂 Listening...")
-                audio = r.listen(source, phrase_time_limit=15)
-                text = r.recognize_google(audio).lower()
-                print(f"👤 Yaseen: {text}")
+    speak("Ready for you, Yaseen.")
+    
+    while True:
+        try:
+            print("\n👂 Listening...")
+            with silence_stderr():
+                with sr.Microphone(device_index=device_index) as source:
+                    audio = r.listen(source, phrase_time_limit=15)
+            
+            text = r.recognize_google(audio).lower()
+            print(f"👤 Yaseen: {text}")
 
-                if any(w in text for w in ["stop", "halt"]):
-                    stop_execution_flag = True
-                    try: ser.write(b"S0;")
-                    except: pass
-                    speak("Stopping.")
-                    continue
+            if any(w in text for w in ["stop", "halt"]):
+                stop_execution_flag = True
+                try: ser.write(b"S0;")
+                except: pass
+                speak("Stopping.")
+                continue
 
-                parts = re.split(r' then | and | after that ', text)
-                all_tasks = []
-                replies = []
+            parts = re.split(r' then | and | after that ', text)
+            all_tasks = []
+            replies = []
 
-                for part in parts:
-                    action, val, unit, mult, u_label, dir_name = parse_command(part)
+            for part in parts:
+                action, val, unit, mult, u_label, dir_name = parse_command(part)
+                if action:
+                    if action in ['L', 'R'] and val is None:
+                        val, unit, u_label = 90, 'deg', "degrees"
+                    
+                    if action in ['F', 'B'] and val is None:
+                        speak(f"How far should I {dir_name}?")
+                        with silence_stderr():
+                            with sr.Microphone(device_index=device_index) as source:
+                                a_sub = r.listen(source, timeout=5, phrase_time_limit=5)
+                        s_text = r.recognize_google(a_sub).lower()
+                        _, val, unit, mult, u_label, _ = parse_command(s_text)
 
-                    if action:
-                        if action in ['L', 'R'] and val is None:
-                            val, unit, u_label = 90, 'deg', "degrees"
-                        
-                        if action in ['F', 'B'] and val is None:
-                            speak(f"How far should I {dir_name}?")
-                            a_sub = r.listen(source, timeout=5, phrase_time_limit=5)
-                            s_text = r.recognize_google(a_sub).lower()
-                            _, val, unit, mult, u_label, _ = parse_command(s_text)
+                    if action and val is not None:
+                        if unit is None: unit = 'dist'
+                        all_tasks.append((action, val * mult, unit))
+                        replies.append(f"{dir_name} for {int(val)} {u_label}")
 
-                        if action and val is not None:
-                            if unit is None: unit = 'dist'
-                            all_tasks.append((action, val * mult, unit))
-                            replies.append(f"{dir_name} for {int(val)} {u_label}")
+            if all_tasks:
+                speak("Got it Yaseen, I am " + " then ".join(replies) + ".")
+                threading.Thread(target=execute_moves, args=(all_tasks,), daemon=True).start()
 
-                if all_tasks:
-                    speak("Got it Yaseen, I am " + " then ".join(replies) + ".")
-                    threading.Thread(target=execute_moves, args=(all_tasks,), daemon=True).start()
-
-            except Exception: pass
+        except Exception: pass
 except KeyboardInterrupt:
     print("\n👋 Shutdown.")
