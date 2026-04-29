@@ -23,16 +23,21 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     if ! dpkg -l | grep -q libespeak1; then MISSING_DEPS="$MISSING_DEPS libespeak1"; fi
     if ! dpkg -l | grep -q espeak; then MISSING_DEPS="$MISSING_DEPS espeak"; fi
     if ! dpkg -l | grep -q portaudio19-dev; then MISSING_DEPS="$MISSING_DEPS portaudio19-dev"; fi
-    if ! dpkg -l | grep -q python3-pyaudio; then MISSING_DEPS="$MISSING_DEPS python3-pyaudio"; fi
+    if ! dpkg -l | grep -q alsa-utils; then MISSING_DEPS="$MISSING_DEPS alsa-utils"; fi
     
     if [ ! -z "$MISSING_DEPS" ]; then
-        echo "Installing missing dependencies: $MISSING_DEPS"
-        sudo apt-get update && sudo apt-get install -y $MISSING_DEPS
+        echo "⚠️ Missing system dependencies: $MISSING_DEPS"
+        echo "Trying to install automatically..."
+        sudo apt-get update && sudo apt-get install -y $MISSING_DEPS || {
+            echo "❌ Automatic install failed. Please run:"
+            echo "   sudo apt-get update && sudo apt-get install -y $MISSING_DEPS"
+            read -p "Press [ENTER] to continue anyway..."
+        }
     fi
 
     if ! pgrep -x "pulseaudio" > /dev/null; then
-        echo "🔊 Starting PulseAudio to prevent ALSA conflicts..."
-        pulseaudio --start --exit-idle-time=-1
+        echo "🔊 Attempting to start PulseAudio..."
+        pulseaudio --start --exit-idle-time=-1 2>/dev/null || echo "⚠️ Could not start PulseAudio. Audio might not work."
     fi
 fi
 

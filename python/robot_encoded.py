@@ -1,4 +1,4 @@
-import serial, time, re, requests, json, threading, os, sys
+import serial, time, re, requests, json, threading, os, sys, pyttsx3
 import speech_recognition as sr
 from contextlib import contextmanager
 
@@ -34,9 +34,24 @@ r.pause_threshold = 1.2
 
 stop_execution_flag = False
 
+# Initialize TTS engine
+try:
+    tts_engine = pyttsx3.init()
+    tts_engine.setProperty('rate', 175)
+except:
+    tts_engine = None
+
 def speak(text):
     print(f"\n🤖 {text}")
-    os.system(f'espeak -s 175 "{text}" --stdout | aplay -D pulse > /dev/null 2>&1')
+    if tts_engine:
+        try:
+            tts_engine.say(text)
+            tts_engine.runAndWait()
+            return
+        except: pass
+    
+    # Fallback to espeak
+    os.system(f'espeak -s 175 "{text}" --stdout | aplay > /dev/null 2>&1')
 
 def execute_moves(planned_moves):
     global stop_execution_flag, ser
@@ -129,6 +144,12 @@ def safe_mic_call(func, *args, **kwargs):
             return safe_mic_call(func, *args, **kwargs)
         else:
             print(f"❌ Microphone Error: {e}")
+            if "No Default Input Device Available" in str(e):
+                print("\n💡 TROUBLESHOOTING TIPS:")
+                print("1. If on WSL: Audio is not bridged by default. Run 'pulseaudio --start' on Windows.")
+                print("2. Linux Permissions: Run 'sudo usermod -aG audio $USER' and restart.")
+                print("3. Busy Device: Ensure no other app (Discord, Zoom) is using the mic.")
+                print("4. Virtual Environment: Ensure PortAudio is installed ('sudo apt install portaudio19-dev').")
             speak("I can't access the microphone. Please check connections.")
             sys.exit(1)
 
