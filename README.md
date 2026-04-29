@@ -7,7 +7,7 @@ Most "voice-controlled" robots are just glorified remote controls. This one has 
 
 ---
 
-## 🎬 The Experience
+## The Experience
 You don't need to memorize commands. Just speak naturally:
 > *"Yo, go forward 50 cm, then turn left and go forward for 30cm then turn left and go forward for 1 second then turn 90 degree to the left.."*
 
@@ -15,7 +15,7 @@ You don't need to memorize commands. Just speak naturally:
 
 ---
 
-## 🤔 How does it work? (For Non-Techies)
+## 🤔 How does it work?
 1. **The Ears (Microphone)**: Captures your voice.
 2. **The Brain (Raspberry Pi + AI)**: Uses **Ollama** (an AI engine) to understand your intent.
 3. **The Muscles (Arduino Nano)**: Receives the "thought" and physically moves the wheels.
