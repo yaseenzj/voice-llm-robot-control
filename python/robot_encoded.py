@@ -5,8 +5,7 @@ from contextlib import contextmanager
 PORT = '/dev/robot_nano' 
 ROBOT_SPEED_CM_S = 41.25 
 
-tts_engine = pyttsx3.init()
-tts_engine.setProperty('rate', 175) 
+
 
 @contextmanager
 def silence_stderr():
@@ -38,8 +37,8 @@ stop_execution_flag = False
 
 def speak(text):
     print(f"\n🤖 {text}")
-    tts_engine.say(text)
-    tts_engine.runAndWait()
+    # Direct espeak call through pulse mixer to avoid ALSA locks
+    os.system(f'espeak -s 175 "{text}" --stdout | aplay -D pulse > /dev/null 2>&1')
 
 def execute_moves(planned_moves):
     global stop_execution_flag, ser
