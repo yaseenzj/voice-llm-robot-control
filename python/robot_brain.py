@@ -8,11 +8,21 @@ import serial.tools.list_ports
 
 def get_arduino_port():
     ports = list(serial.tools.list_ports.comports())
+    if not ports:
+        print("WARNING: No serial ports detected! Is your Arduino Nano plugged in?")
+        return 'COM3' if os.name == 'nt' else '/dev/ttyUSB0'
+
+    print("\nScanning for Arduino Nano...")
     for p in ports:
-        # Arduino Nano often shows up as USB-SERIAL CH340 or CP2102
-        if "USB-SERIAL" in p.description.upper() or "CH340" in p.description.upper() or "ARDUINO" in p.description.upper():
+        print(f"   - Found: {p.device} ({p.description})")
+        # Arduino Nano often shows up as USB-SERIAL CH340, CP2102, or Arduino
+        if any(keyword in p.description.upper() for keyword in ["USB-SERIAL", "CH340", "CP2102", "ARDUINO", "USB SERIAL"]):
+            print(f"   MATCH FOUND: {p.device}")
             return p.device
-    return 'COM3' if os.name == 'nt' else '/dev/ttyUSB0'
+    
+    default_port = ports[0].device
+    print(f"   No certain match found. Defaulting to first available: {default_port}")
+    return default_port
 
 PORT = get_arduino_port()
 MODEL = "llama3.2:1b"
@@ -129,15 +139,10 @@ try:
 
         selected_mic_name = mics[MIC_INDEX].lower()
         if "array" in selected_mic_name or "built-in" in selected_mic_name:
-            print(f"WARNING: '{mics[MIC_INDEX]}' looks like a built-in mic!")
-            print("This project requires an EXTERNAL microphone (like Digitek) for better accuracy.")
-            try:
-                choice = input("Do you want to continue anyway? (y/N): ").lower()
-                if choice != 'y':
-                    print("Exiting. Please connect an external mic and try again.")
-                    exit()
-            except EOFError:
-                print("Skipping confirmation due to environment constraints.")
+            print(f"ERROR: '{mics[MIC_INDEX]}' is a built-in microphone!")
+            print("As requested, ONLY external microphones (like Digitek) are allowed for this project.")
+            print("Please connect an external mic and restart.")
+            exit()
 
         mic = sr.Microphone(device_index=MIC_INDEX)
     

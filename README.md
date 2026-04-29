@@ -56,7 +56,7 @@ ollama pull llama3.2:1b
 
 # Wake it up
 # Wake it up (Replace <index> with your mic index from list_mics.py)
-python python/robot_brain.py <index>
+python python/robot_encoded.py <index>
 ```
 
 ---

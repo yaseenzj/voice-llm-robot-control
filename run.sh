@@ -48,4 +48,4 @@ fi
 
 echo "DONE: Setup complete! Booting up Robot Brain..."
 cd python
-python robot_brain.py $MIC_INDEX
+python robot_encoded.py $MIC_INDEX

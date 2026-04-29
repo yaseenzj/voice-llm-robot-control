@@ -3,8 +3,29 @@ import pyttsx3, os, sys, threading
 from contextlib import contextmanager
 
 # --- CONFIG ---
-PORT = '/dev/robot_nano' 
+# --- CONFIG ---
+import serial.tools.list_ports
+
+def get_arduino_port():
+    ports = list(serial.tools.list_ports.comports())
+    if not ports:
+        print("WARNING: No serial ports detected! Is your Arduino Nano plugged in?")
+        return 'COM3' if os.name == 'nt' else '/dev/ttyUSB0'
+
+    print("\nScanning for Arduino Nano...")
+    for p in ports:
+        print(f"   - Found: {p.device} ({p.description})")
+        if any(keyword in p.description.upper() for keyword in ["USB-SERIAL", "CH340", "CP2102", "ARDUINO", "USB SERIAL"]):
+            print(f"   MATCH FOUND: {p.device}")
+            return p.device
+    
+    default_port = ports[0].device
+    print(f"   No certain match found. Defaulting to first available: {default_port}")
+    return default_port
+
+PORT = get_arduino_port()
 ROBOT_SPEED_CM_S = 41.25 
+MIC_INDEX = int(sys.argv[1]) if len(sys.argv) > 1 else None
 
 # --- INIT ---
 tts_engine = pyttsx3.init()
@@ -25,10 +46,14 @@ def silence_stderr():
 
 def init_serial():
     try:
+        print(f"Initializing Arduino Nano on {PORT}... Wait 2 seconds.")
         s = serial.Serial(PORT, 9600, timeout=1)
-        time.sleep(1)
+        time.sleep(2)
+        print(f"DONE: Robot Connected on {PORT}")
         return s
-    except: return None
+    except Exception as e:
+        print(f"SERIAL ERROR: Could not connect to {PORT}. {e}")
+        return None
 
 ser = init_serial()
 r = sr.Recognizer()
@@ -40,7 +65,7 @@ r.pause_threshold = 1.2
 stop_execution_flag = False
 
 def speak(text):
-    print(f"\n🤖 {text}")
+    print(f"\nROBOT: {text}")
     tts_engine.say(text)
     tts_engine.runAndWait()
 
@@ -110,10 +135,34 @@ def parse_command(text):
 
 try:
     with silence_stderr():
-        mic = sr.Microphone()
+        if MIC_INDEX is None:
+            print("WARNING: No Microphone Index provided. Listing available mics...")
+            import subprocess
+            subprocess.run([sys.executable, "list_mics.py"])
+            print("\n")
+            try:
+                user_choice = input("Enter the index of your EXTERNAL microphone: ")
+                MIC_INDEX = int(user_choice)
+            except ValueError:
+                print("ERROR: Invalid input. Please enter a number.")
+                exit()
+        
+        mics = sr.Microphone.list_microphone_names()
+        if MIC_INDEX < 0 or MIC_INDEX >= len(mics):
+            print(f"ERROR: Index {MIC_INDEX} is out of range.")
+            exit()
+
+        selected_mic_name = mics[MIC_INDEX].lower()
+        if "array" in selected_mic_name or "built-in" in selected_mic_name:
+            print(f"ERROR: '{mics[MIC_INDEX]}' is a built-in microphone!")
+            print("As requested, ONLY external microphones (like Digitek) are allowed for this project.")
+            print("Please connect an external mic and restart.")
+            exit()
+
+        mic = sr.Microphone(device_index=MIC_INDEX)
     
     with mic as source:
-        print("🔍 Calibrating Mic...")
+        print("Calibrating Mic... Stay quiet.")
         r.adjust_for_ambient_noise(source, duration=2)
         speak("Ready for you, Yaseen.")
         
@@ -122,7 +171,7 @@ try:
                 print("\n👂 Listening...")
                 audio = r.listen(source, phrase_time_limit=15)
                 text = r.recognize_google(audio).lower()
-                print(f"👤 Yaseen: {text}")
+                print(f"USER: {text}")
 
                 if any(w in text for w in ["stop", "halt"]):
                     stop_execution_flag = True
